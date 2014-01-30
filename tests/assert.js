@@ -24,10 +24,10 @@ define([
 		}
 		catch (err) {
 			if ('string' === typeof msg) {
-				assert.equal(err.message, msg, 'Errors should be equal');
+				assert.equal(err.message, msg, 'Errors should be equal: ' + err.message + ' vs ' + msg);
 			}
 			else {
-				assert.match(err.msg, msg, 'Errors should be equal');
+				assert.match(err.msg, msg, 'Errors should be equal' + err.msg + ' vs ' + msg);
 			}
 
 			return;
@@ -447,28 +447,26 @@ define([
 
 		tdd.test('include', function () {
 			assert.include('foobar', 'bar');
-			assert.include([ 1, 2, 3], 3);
+			assert.include([ 1, 2, 3 ], 3);
+			assert.include({ a: 1, b: 2 }, { b: 2 });
 
 			err(function () {
 				assert.include('foobar', 'baz');
-			}, 'expected \'foobar\' to contain \'baz\'');
+			}, 'expected \'foobar\' to include \'baz\'');
 
 			err(function () {
 				assert.include(undefined, 'bar');
-			}, 'expected an array or string');
+			}, 'expected undefined to include \'bar\'');
 		});
 
 		tdd.test('notInclude', function () {
 			assert.notInclude('foobar', 'baz');
 			assert.notInclude([ 1, 2, 3 ], 4);
+			assert.notInclude(undefined, 'bar');
 
 			err(function () {
 				assert.notInclude('foobar', 'bar');
-			}, 'expected \'foobar\' to not contain \'bar\'');
-
-			err(function () {
-				assert.notInclude(undefined, 'bar');
-			}, 'expected an array or string');
+			}, 'expected \'foobar\' to not include \'bar\'');
 		});
 
 		tdd.test('lengthOf', function () {
@@ -548,6 +546,10 @@ define([
 			assert.throws(function () { throw new Error('bar'); }, /bar/);
 			assert.throws(function () { throw new Error('bar'); }, Error);
 			assert.throws(function () { throw new Error('bar'); }, Error, 'bar');
+
+			var thrownErr = assert.throws(function () { throw new Error('foo'); });
+			assert(thrownErr instanceof Error, 'assert.throws returns error');
+			assert(thrownErr.message === 'foo', 'assert.throws returns error message');
 
 			err(function () {
 				assert.throws(function () { throw new Error('foo'); }, TypeError);

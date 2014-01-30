@@ -404,6 +404,13 @@ define([
 	}
 
 	/**
+	 * Indicate whether the given object is an object.
+	 */
+	function isObject(obj) {
+		return obj === Object(obj);
+	}
+
+	/**
 	 * Verify that the given object is an array or a string.
 	 */
 	function assertIsArrayOrString(value, message) {
@@ -770,21 +777,42 @@ define([
 		};
 	})();
 
-	assert.include = function (haystack, needle, message) {
-		assertIsArrayOrString(haystack);
-		if (getIndexOf(haystack, needle) === -1) {
-			fail('', needle, message ||
-				('expected ' + formatValue(haystack) + ' to contain ' + formatValue(needle)), 'include', assert.include);
+	(function () {
+		function hasProperty(object, name, value) {
+			if (value) {
+				return object[name] === value;
+			}
+			else {
+				return object[name] !== undefined;
+			}
 		}
-	};
 
-	assert.notInclude = function (haystack, needle, message) {
-		assertIsArrayOrString(haystack);
-		if (getIndexOf(haystack, needle) !== -1) {
-			fail('', needle, message ||
-				('expected ' + formatValue(haystack) + ' to not contain ' + formatValue(needle)), 'include', assert.include);
-		}
-	};
+		assert.include = function (haystack, needle, message) {
+			if (isObject(needle)) {
+				for (var k in needle) {
+					assert(hasProperty(haystack, k, needle[k]));
+				}
+			}
+			else {
+				var expected = haystack && (getIndexOf(haystack, needle) !== -1);
+				assert(expected, message || ('expected ' + formatValue(haystack) + ' to include '
+					+ formatValue(needle)), 'include', assert.include);
+			}
+		};
+
+		assert.notInclude = function (haystack, needle, message) {
+			if (isObject(needle)) {
+				for (var k in needle) {
+					assert(!hasProperty(haystack, k));
+				}
+			}
+			else {
+				var expected = haystack && (getIndexOf(haystack, needle) !== -1);
+				assert(!expected, message || ('expected ' + formatValue(haystack) + ' to not include '
+					+ formatValue(needle)), 'not include', assert.notInclude);
+			}
+		};
+	})();
 
 	assert.match = function (value, regexp, message) {
 		if (!regexp.test(value)) {
@@ -966,14 +994,16 @@ define([
 			if (threw && !shouldThrow) {
 				throw error;
 			}
+
+			return error;
 		}
 
 		assert.throws = assert['throw'] = function (/* block, error, message */) {
-			throws.apply(this, [ true ].concat(sliceArray.call(arguments)));
+			return throws.apply(this, [ true ].concat(sliceArray.call(arguments)));
 		};
 
 		assert.doesNotThrow = function (/* block, error, message */) {
-			throws.apply(this, [ false ].concat(sliceArray.call(arguments)));
+			return throws.apply(this, [ false ].concat(sliceArray.call(arguments)));
 		};
 	})();
 
